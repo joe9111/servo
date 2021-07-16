@@ -791,10 +791,15 @@ def setup_uwp_signing(ms_app_store, publisher):
             print("ERROR: PowerShell command failed: ", cmd)
             exit(1)
 
+    pfx = None
     if is_tc:
         print("Packaging on TC. Using secret certificate")
-        pfx = get_taskcluster_secret("windows-codesign-cert/latest")["pfx"]
-        open("servo.pfx", "wb").write(base64.b64decode(pfx["base64"]))
+        pfx = get_taskcluster_secret("windows-codesign-cert/latest")["pfx"]["base64"]
+    elif 'CODESIGN_CERT' in os.environ:
+        pfx = os.environ['CODESIGN_CERT']
+
+    if pfx:
+        open("servo.pfx", "wb").write(base64.b64decode(pfx))
         run_powershell_cmd('Import-PfxCertificate -FilePath .\\servo.pfx -CertStoreLocation Cert:\\CurrentUser\\My')
         os.remove("servo.pfx")
 
